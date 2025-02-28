@@ -33,13 +33,17 @@ int main(int argc, char *argv[])
     bool showPangolin = true ; // true If you want to spone the Pangolin window with pose estimation drawed
     bool bEqual = false;
 
+    //--------------------------Publishers--------------------------
+
     // Publish odom message from SE3
-    auto odom_publ = node->create_publisher<nav_msgs::msg::Odometry>("/odometry/slam", 10);
+    auto odom_pub = node->create_publisher<nav_msgs::msg::Odometry>("/odometry/slam", 10);
     
+    // Publish 3D Point-Cloud
+    auto cloud_pub = node->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/pointcloud", 10);
 
     // Create SLAM system and ImageGrabber
     auto SLAM = std::make_shared<ORB_SLAM3::System>(vocab_path, config_path, ORB_SLAM3::System::MONOCULAR, showPangolin);
-    auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual,  odom_publ, node, "oak-d_frame");
+    auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "oak-d_frame");
 
     // Creating Image subscription
     std::string imgTopicName = "/myrobot/image_raw" ;

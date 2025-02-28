@@ -13,8 +13,8 @@ def generate_launch_description():
     vocab_file = os.path.join(slam_pkg_path, "config", "ORBvoc.txt")
     settings_file = os.path.join(slam_pkg_path, "config", "camera_and_slam_settings.yaml")
 
-    print(f"Resolved vocab file: {vocab_file}")
-    print(f"Resolved settings file: {settings_file}")
+    print(f"Path of vocab file: {vocab_file}")
+    print(f"Path of settings file: {settings_file}")
 
     # Declare an argument to enable or disable bag recording
     record_bag_arg = DeclareLaunchArgument(
