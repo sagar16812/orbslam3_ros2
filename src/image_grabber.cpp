@@ -171,8 +171,9 @@ void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& se3)
 void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
 {
     sensor_msgs::msg::PointCloud2 cloud_msg;
-    cloud_msg.header.stamp = rosNode_->get_clock()->now();
-    cloud_msg.header.frame_id = "map";  // Set a fixed frame for the map
+    //cloud_msg.header.stamp = rosNode_->get_clock()->now();
+    // cloud_msg.header.frame_id = "map";  // Set a fixed frame for the map
+    cloud_msg.header.frame_id = tf_frame;  // Set a fixed frame for the map 
     cloud_msg.height = 1;
     cloud_msg.width = points.size();
     cloud_msg.is_dense = false;

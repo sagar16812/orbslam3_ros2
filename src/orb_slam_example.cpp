@@ -16,6 +16,37 @@
 #include <mutex>
 #include <thread>
 
+//-----New-----
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+//-----New-----
+
+
+// Function to broadcast static transform
+void publish_static_transform(std::shared_ptr<rclcpp::Node> node)
+{
+    static tf2_ros::StaticTransformBroadcaster static_broadcaster(node);
+    geometry_msgs::msg::TransformStamped static_transform;
+
+    static_transform.header.stamp = node->now();
+    static_transform.header.frame_id = "odom";   // The reference frame
+    static_transform.child_frame_id = "map"; // Your camera frame
+
+    // Set translation (modify based on actual camera mounting position)
+    static_transform.transform.translation.x = 0.0;
+    static_transform.transform.translation.y = 0.0;
+    static_transform.transform.translation.z = 0.0;
+
+    // Set orientation (identity quaternion: no rotation)
+    static_transform.transform.rotation.x = 0.0;
+    static_transform.transform.rotation.y = 0.0;
+    static_transform.transform.rotation.z = 0.0;
+    static_transform.transform.rotation.w = 1.0;
+
+    static_broadcaster.sendTransform(static_transform);
+    RCLCPP_INFO(node->get_logger(), "Published static transform: odom -> map");
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -41,9 +72,15 @@ int main(int argc, char *argv[])
     // Publish 3D Point-Cloud
     auto cloud_pub = node->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/pointcloud", 10);
 
+    //-----New-----
+    // Publish static transform
+    publish_static_transform(node);
+    //-----New-----
+    
     // Create SLAM system and ImageGrabber
     auto SLAM = std::make_shared<ORB_SLAM3::System>(vocab_path, config_path, ORB_SLAM3::System::MONOCULAR, showPangolin);
-    auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "oak-d_frame");
+    // auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "oak-d_frame");
+    auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "map");
 
     // Creating Image subscription
     std::string imgTopicName = "/myrobot/image_raw" ;
