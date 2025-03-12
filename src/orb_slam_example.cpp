@@ -29,22 +29,24 @@ void publish_static_transform(std::shared_ptr<rclcpp::Node> node)
     geometry_msgs::msg::TransformStamped static_transform;
 
     static_transform.header.stamp = node->now();
+    //static_transform.header.frame_id = "map";   // The reference frame
+    //static_transform.child_frame_id = "odom"; // Your camera frame    
     static_transform.header.frame_id = "odom";   // The reference frame
-    static_transform.child_frame_id = "map"; // Your camera frame
+    static_transform.child_frame_id = "base_link"; // Your camera frame
 
-    // Set translation (modify based on actual camera mounting position)
-    static_transform.transform.translation.x = 0.0;
-    static_transform.transform.translation.y = 0.0;
-    static_transform.transform.translation.z = 0.0;
+    // // Set translation (modify based on actual camera mounting position)
+    // static_transform.transform.translation.x = 0.0;
+    // static_transform.transform.translation.y = 0.0;
+    // static_transform.transform.translation.z = 0.10;
 
-    // Set orientation (identity quaternion: no rotation)
-    static_transform.transform.rotation.x = 0.0;
-    static_transform.transform.rotation.y = 0.0;
-    static_transform.transform.rotation.z = 0.0;
-    static_transform.transform.rotation.w = 1.0;
+    // // Set orientation (identity quaternion: no rotation)
+    // static_transform.transform.rotation.x = 0.0;
+    // static_transform.transform.rotation.y = 0.0;
+    // static_transform.transform.rotation.z = 0.0;
+    // static_transform.transform.rotation.w = 1.0;
 
     static_broadcaster.sendTransform(static_transform);
-    RCLCPP_INFO(node->get_logger(), "Published static transform: odom -> map");
+    //RCLCPP_INFO(node->get_logger(), "Published static transform: map -> odom");
 }
 
 
@@ -53,11 +55,15 @@ int main(int argc, char *argv[])
     rclcpp::init(argc, argv);
 
     auto node = std::make_shared<rclcpp::Node>("orbslam3_ros2");
+
+    // Retrieve parameters
+    node->declare_parameter("config_path", "");  // Declare with default empty value
+    node->declare_parameter("vocab_path", ""); 
+        
+    std::string config_path = node->get_parameter("config_path").as_string();
+    // std::string vocab_path = node->get_parameter("vocab_path").as_string();
     
-    //std::string config_path = node->get_parameters("config_path").as_string();
-    //std::string vocab_path = node->get_parameters("vocab_path").as_string();
-    
-    std::string config_path = "/home/sagar/Developer/ComputerVision/SLAM/slam_ws/src/orbslam3_ros2/config/camera_and_slam_settings.yaml";
+    //std::string config_path = "/home/sagar/Developer/ComputerVision/SLAM/slam_ws/src/orbslam3_ros2/config/camera_and_slam_settings.yaml";
     std::string vocab_path = "/home/sagar/Developer/ComputerVision/SLAM/ORB_SLAM3/Vocabulary/ORBvoc.txt";
     
     //bool showPangolin = false ; // true If you want to spone the Pangolin window with pose estimation drawed
@@ -80,7 +86,8 @@ int main(int argc, char *argv[])
     // Create SLAM system and ImageGrabber
     auto SLAM = std::make_shared<ORB_SLAM3::System>(vocab_path, config_path, ORB_SLAM3::System::MONOCULAR, showPangolin);
     // auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "oak-d_frame");
-    auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "map");
+    //auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "map");
+    auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "odom");
 
     // Creating Image subscription
     std::string imgTopicName = "/myrobot/image_raw" ;

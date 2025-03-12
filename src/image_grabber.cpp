@@ -14,17 +14,19 @@ ImageGrabber::ImageGrabber(std::shared_ptr<ORB_SLAM3::System> pSLAM, bool bClahe
     std::shared_ptr<rclcpp::Node> ros_node, const std::string camera_frame_name)
     : mpSLAM(pSLAM), mbClahe(bClahe), first_pose(true), odom_pub_(rospub), cloud_pub_(cloud_pub),
       rosNode_(ros_node), tf_frame(camera_frame_name){
+        // odom_msg_.header.frame_id = tf_frame;
+        // odom_msg_.child_frame_id = "odom";
         odom_msg_.header.frame_id = "odom";
-        odom_msg_.child_frame_id = tf_frame;
+        odom_msg_.child_frame_id = "base_link";
 
-        odom_msg_.pose.pose.position.x = 0.0;
-        odom_msg_.pose.pose.position.y = 0.0;
-        odom_msg_.pose.pose.position.z = 0.0;
+        // odom_msg_.pose.pose.position.x = 0.0;
+        // odom_msg_.pose.pose.position.y = 0.0;
+        // odom_msg_.pose.pose.position.z = 0.0;
         
-        odom_msg_.pose.pose.orientation.x = 0.0;
-        odom_msg_.pose.pose.orientation.y = 0.0;
-        odom_msg_.pose.pose.orientation.z = 0.0;
-        odom_msg_.pose.pose.orientation.w = 0.0;
+        // odom_msg_.pose.pose.orientation.x = 0.0;
+        // odom_msg_.pose.pose.orientation.y = 0.0;
+        // odom_msg_.pose.pose.orientation.z = 0.0;
+        // odom_msg_.pose.pose.orientation.w = 0.0;
     }
 
 void ImageGrabber::grabImage(const sensor_msgs::msg::Image::SharedPtr msg)
@@ -124,16 +126,70 @@ void ImageGrabber::processImages()
 void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& se3)
 {
     odom_msg_.header.stamp = rosNode_->get_clock()->now();
-    // odom_msg_.header.frame_id = tf_frame;
-    odom_msg_.header.frame_id = "odom";
-    odom_msg_.pose.pose.position.x = se3.translation().x();
-    odom_msg_.pose.pose.position.y = se3.translation().y();
-    odom_msg_.pose.pose.position.z = se3.translation().z();
-    Eigen::Quaternionf q(se3.unit_quaternion());
-    odom_msg_.pose.pose.orientation.x = q.x();
-    odom_msg_.pose.pose.orientation.y = q.y();
-    odom_msg_.pose.pose.orientation.z = q.z();
-    odom_msg_.pose.pose.orientation.w = q.w();
+    //odom_msg_.header.frame_id = tf_frame;
+    //odom_msg_.child_frame_id = "base_link"
+    // odom_msg_.header.frame_id = "odom";
+
+    // odom_msg_.pose.pose.position.x = se3.translation().x();
+    // odom_msg_.pose.pose.position.y = se3.translation().y();
+    // odom_msg_.pose.pose.position.z = se3.translation().z();
+    // Eigen::Quaternionf q(se3.unit_quaternion());
+    // odom_msg_.pose.pose.orientation.x = q.x();
+    // odom_msg_.pose.pose.orientation.y = q.y();
+    // odom_msg_.pose.pose.orientation.z = q.z();
+    // odom_msg_.pose.pose.orientation.w = q.w();
+    // odom_pub_->publish(odom_msg_);
+
+    // Convert ORB-SLAM3 coordinate system to ROS2
+    // Print before conversion
+    std::cout << "Before Conversion (SE3f):" << std::endl;
+    // std::cout << "Translation: " << se3.translation().transpose() << std::endl;
+    std::cout << "x: " << se3.translation().x();
+    std::cout << " y: " << se3.translation().y();
+    std::cout << " z: " << se3.translation().z() << std::endl;
+    // std::cout << "Rotation Matrix:\n" << se3.rotationMatrix() << std::endl;
+
+    odom_msg_.pose.pose.position.x = se3.translation().z();   // Z_OCV → X_ROS
+    odom_msg_.pose.pose.position.y = -se3.translation().x();  // -X_OCV → Y_ROS
+    odom_msg_.pose.pose.position.z = -se3.translation().y();  // -Y_OCV → Z_ROS
+
+    // Print after conversion
+    std::cout << "After Conversion (ROS2):" << std::endl;
+    std::cout << "x: " << odom_msg_.pose.pose.position.x;
+    std::cout << " y: " << odom_msg_.pose.pose.position.y;
+    std::cout << " z: " << odom_msg_.pose.pose.position.z << std::endl;
+
+    // Convert ORB-SLAM3 quaternion to ROS2 (handle different coordinate frames)
+    Eigen::Quaternionf q_ocv(se3.unit_quaternion());
+
+    // Apply the transformation: q_ros = q_ocv * q_conversion
+    Eigen::Quaternionf q_conversion(0.5, -0.5, 0.5, 0.5);  // Rotation to align frames
+
+    // Correct rotation to align ORB-SLAM3 with ROS2 REP-105 (90° rotation around X-axis)
+    // Eigen::Quaternionf q_conversion(Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitX()));
+
+    Eigen::Quaternionf q_ros = q_conversion * q_ocv;
+
+    odom_msg_.pose.pose.orientation.x = q_ros.x();
+    odom_msg_.pose.pose.orientation.y = q_ros.y();
+    odom_msg_.pose.pose.orientation.z = q_ros.z();
+    odom_msg_.pose.pose.orientation.w = q_ros.w();
+
+    // --- Set Covariance Values ---
+    double position_variance = 0.01;  // Adjust based on your SLAM system's accuracy
+    double orientation_variance = 0.02;
+
+    for (int i = 0; i < 36; i++) odom_msg_.pose.covariance[i] = 0.0;
+
+    odom_msg_.pose.covariance[0] = position_variance;  // x
+    odom_msg_.pose.covariance[7] = position_variance;  // y
+    odom_msg_.pose.covariance[14] = position_variance; // z
+
+    odom_msg_.pose.covariance[21] = orientation_variance; // roll
+    odom_msg_.pose.covariance[28] = orientation_variance; // pitch
+    odom_msg_.pose.covariance[35] = orientation_variance; // yaw
+    // --------------------------------
+    
     odom_pub_->publish(odom_msg_);
 }
 
@@ -173,7 +229,8 @@ void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
     sensor_msgs::msg::PointCloud2 cloud_msg;
     //cloud_msg.header.stamp = rosNode_->get_clock()->now();
     // cloud_msg.header.frame_id = "map";  // Set a fixed frame for the map
-    cloud_msg.header.frame_id = tf_frame;  // Set a fixed frame for the map 
+    //cloud_msg.header.frame_id = tf_frame;  // Set a fixed frame for the map 
+    cloud_msg.header.frame_id = "base_link";  // Set a fixed frame for the map 
     cloud_msg.height = 1;
     cloud_msg.width = points.size();
     cloud_msg.is_dense = false;
@@ -189,9 +246,16 @@ void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
 
     for (const auto& point : points)
     {
-        *iter_x = point.x();
-        *iter_y = point.y();
-        *iter_z = point.z();
+        // *iter_x = point.x();
+        // *iter_y = point.y();
+        // *iter_z = point.z();
+        // ++iter_x;
+        // ++iter_y;
+        // ++iter_z;
+
+        *iter_x = point.z();  // Z_OCV → X_ROS
+        *iter_y = -point.x(); // -X_OCV → Y_ROS
+        *iter_z = -point.y(); // -Y_OCV → Z_ROS
         ++iter_x;
         ++iter_y;
         ++iter_z;
