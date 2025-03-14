@@ -141,29 +141,30 @@ void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& se3)
     // odom_pub_->publish(odom_msg_);
 
     // Convert ORB-SLAM3 coordinate system to ROS2
-    // Print before conversion
-    std::cout << "Before Conversion (SE3f):" << std::endl;
-    // std::cout << "Translation: " << se3.translation().transpose() << std::endl;
-    std::cout << "x: " << se3.translation().x();
-    std::cout << " y: " << se3.translation().y();
-    std::cout << " z: " << se3.translation().z() << std::endl;
-    // std::cout << "Rotation Matrix:\n" << se3.rotationMatrix() << std::endl;
-
+    /* Commenting it temporarily to check ros2 coordinates
     odom_msg_.pose.pose.position.x = se3.translation().z();   // Z_OCV → X_ROS
     odom_msg_.pose.pose.position.y = -se3.translation().x();  // -X_OCV → Y_ROS
     odom_msg_.pose.pose.position.z = -se3.translation().y();  // -Y_OCV → Z_ROS
-
-    // Print after conversion
-    std::cout << "After Conversion (ROS2):" << std::endl;
-    std::cout << "x: " << odom_msg_.pose.pose.position.x;
-    std::cout << " y: " << odom_msg_.pose.pose.position.y;
-    std::cout << " z: " << odom_msg_.pose.pose.position.z << std::endl;
+    */
+    odom_msg_.pose.pose.position.x = -se3.translation().z();   // Z_OCV → X_ROS
+    odom_msg_.pose.pose.position.y = se3.translation().x();  // -X_OCV → Y_ROS
+    odom_msg_.pose.pose.position.z = se3.translation().y();  // -Y_OCV → Z_ROS
 
     // Convert ORB-SLAM3 quaternion to ROS2 (handle different coordinate frames)
     Eigen::Quaternionf q_ocv(se3.unit_quaternion());
 
     // Apply the transformation: q_ros = q_ocv * q_conversion
-    Eigen::Quaternionf q_conversion(0.5, -0.5, 0.5, 0.5);  // Rotation to align frames
+    // Eigen::Quaternionf q_conversion(0.5, -0.5, 0.5, 0.5);  // Rotation to align frames
+    // Eigen::Quaternionf q_conversion(0.0, 1.0, 0.0, 0.0);  // Rotation to align frames
+    // Eigen::Quaternionf q_conversion(Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitX()) *
+    //                            Eigen::AngleAxisf(M_PI / 2, Eigen::Vector3f::UnitY()));
+    
+    Eigen::Quaternionf q_conversion(Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitY()) *
+                               Eigen::AngleAxisf(M_PI / 2, Eigen::Vector3f::UnitZ()));
+
+    // Eigen::Quaternionf q_conversion(Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitY()) *
+    // Eigen::AngleAxisf(M_PI / 2, Eigen::Vector3f::UnitZ()) *
+    // Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitY()));  // Fix Yaw
 
     // Correct rotation to align ORB-SLAM3 with ROS2 REP-105 (90° rotation around X-axis)
     // Eigen::Quaternionf q_conversion(Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitX()));
