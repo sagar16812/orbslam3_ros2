@@ -14,10 +14,10 @@ ImageGrabber::ImageGrabber(std::shared_ptr<ORB_SLAM3::System> pSLAM, bool bClahe
     std::shared_ptr<rclcpp::Node> ros_node, const std::string camera_frame_name)
     : mpSLAM(pSLAM), mbClahe(bClahe), first_pose(true), odom_pub_(rospub), cloud_pub_(cloud_pub),
       rosNode_(ros_node), tf_frame(camera_frame_name){
-        // odom_msg_.header.frame_id = tf_frame;
-        // odom_msg_.child_frame_id = "odom";
-        odom_msg_.header.frame_id = "odom";
-        odom_msg_.child_frame_id = "base_link";
+        odom_msg_.header.frame_id = tf_frame;
+        odom_msg_.child_frame_id = "odom";
+        // odom_msg_.header.frame_id = "odom";
+        // odom_msg_.child_frame_id = "map";
 
         // odom_msg_.pose.pose.position.x = 0.0;
         // odom_msg_.pose.pose.position.y = 0.0;
@@ -231,7 +231,7 @@ void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
     //cloud_msg.header.stamp = rosNode_->get_clock()->now();
     // cloud_msg.header.frame_id = "map";  // Set a fixed frame for the map
     //cloud_msg.header.frame_id = tf_frame;  // Set a fixed frame for the map 
-    cloud_msg.header.frame_id = "base_link";  // Set a fixed frame for the map 
+    cloud_msg.header.frame_id = "map";  // Set a fixed frame for the map 
     cloud_msg.height = 1;
     cloud_msg.width = points.size();
     cloud_msg.is_dense = false;

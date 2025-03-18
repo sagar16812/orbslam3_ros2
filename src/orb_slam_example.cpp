@@ -29,10 +29,10 @@ void publish_static_transform(std::shared_ptr<rclcpp::Node> node)
     geometry_msgs::msg::TransformStamped static_transform;
 
     static_transform.header.stamp = node->now();
-    //static_transform.header.frame_id = "map";   // The reference frame
-    //static_transform.child_frame_id = "odom"; // Your camera frame    
-    static_transform.header.frame_id = "odom";   // The reference frame
-    static_transform.child_frame_id = "base_link"; // Your camera frame
+    static_transform.header.frame_id = "map";   // The reference frame
+    static_transform.child_frame_id = "odom"; // Your camera frame    
+    // static_transform.header.frame_id = "odom";   // The reference frame
+    // static_transform.child_frame_id = "map"; // Your camera frame
 
     // // Set translation (modify based on actual camera mounting position)
     // static_transform.transform.translation.x = 0.0;
@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
     // Create SLAM system and ImageGrabber
     auto SLAM = std::make_shared<ORB_SLAM3::System>(vocab_path, config_path, ORB_SLAM3::System::MONOCULAR, showPangolin);
     // auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "oak-d_frame");
-    //auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "map");
-    auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "odom");
+    auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "map");
+    // auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "odom");
 
     // Creating Image subscription
     std::string imgTopicName = "/myrobot/image_raw" ;
