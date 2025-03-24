@@ -16,17 +16,6 @@ ImageGrabber::ImageGrabber(std::shared_ptr<ORB_SLAM3::System> pSLAM, bool bClahe
       rosNode_(ros_node), tf_frame(camera_frame_name){
         odom_msg_.header.frame_id = tf_frame;
         odom_msg_.child_frame_id = "odom";
-        // odom_msg_.header.frame_id = "odom";
-        // odom_msg_.child_frame_id = "map";
-
-        // odom_msg_.pose.pose.position.x = 0.0;
-        // odom_msg_.pose.pose.position.y = 0.0;
-        // odom_msg_.pose.pose.position.z = 0.0;
-        
-        // odom_msg_.pose.pose.orientation.x = 0.0;
-        // odom_msg_.pose.pose.orientation.y = 0.0;
-        // odom_msg_.pose.pose.orientation.z = 0.0;
-        // odom_msg_.pose.pose.orientation.w = 0.0;
     }
 
 void ImageGrabber::grabImage(const sensor_msgs::msg::Image::SharedPtr msg)
@@ -53,34 +42,6 @@ cv::Mat ImageGrabber::getImage(const sensor_msgs::msg::Image::SharedPtr &img_msg
         return cv::Mat();
     }
 }
-
-/*
-void ImageGrabber::processImages()
-{
-    while (rclcpp::ok())
-    {
-        sensor_msgs::msg::Image::SharedPtr img_msg;
-        {
-            std::lock_guard<std::mutex> lock(mBufMutex);
-            if (img0Buf.empty())
-                continue;
-            img_msg = img0Buf.front();
-            img0Buf.pop();
-        }
-        cv::Mat image = getImage(img_msg);
-        if (image.empty())
-            continue;
-
-        Sophus::SE3f pose;
-        std::vector<Eigen::Vector3f> point_cloud;
-        pose = mpSLAM->TrackMonocular(image, img_msg->header.stamp.sec + 1e-9 * img_msg->header.stamp.nanosec);
-        point_cloud = mpSLAM->GetCurrentPointCloud();
-
-        publishSE3fToOdom(pose);
-        publishPointCloud(point_cloud);
-    }
-}
-*/
 
 void ImageGrabber::processImages()
 {
@@ -126,26 +87,7 @@ void ImageGrabber::processImages()
 void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& se3)
 {
     odom_msg_.header.stamp = rosNode_->get_clock()->now();
-    //odom_msg_.header.frame_id = tf_frame;
-    //odom_msg_.child_frame_id = "base_link"
-    // odom_msg_.header.frame_id = "odom";
 
-    // odom_msg_.pose.pose.position.x = se3.translation().x();
-    // odom_msg_.pose.pose.position.y = se3.translation().y();
-    // odom_msg_.pose.pose.position.z = se3.translation().z();
-    // Eigen::Quaternionf q(se3.unit_quaternion());
-    // odom_msg_.pose.pose.orientation.x = q.x();
-    // odom_msg_.pose.pose.orientation.y = q.y();
-    // odom_msg_.pose.pose.orientation.z = q.z();
-    // odom_msg_.pose.pose.orientation.w = q.w();
-    // odom_pub_->publish(odom_msg_);
-
-    // Convert ORB-SLAM3 coordinate system to ROS2
-    /* Commenting it temporarily to check ros2 coordinates
-    odom_msg_.pose.pose.position.x = se3.translation().z();   // Z_OCV → X_ROS
-    odom_msg_.pose.pose.position.y = -se3.translation().x();  // -X_OCV → Y_ROS
-    odom_msg_.pose.pose.position.z = -se3.translation().y();  // -Y_OCV → Z_ROS
-    */
     odom_msg_.pose.pose.position.x = -se3.translation().z();   // Z_OCV → X_ROS
     odom_msg_.pose.pose.position.y = se3.translation().x();  // -X_OCV → Y_ROS
     odom_msg_.pose.pose.position.z = se3.translation().y();  // -Y_OCV → Z_ROS
@@ -194,43 +136,10 @@ void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& se3)
     odom_pub_->publish(odom_msg_);
 }
 
-// void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
-// {
-//     sensor_msgs::msg::PointCloud2 cloud_msg;
-//     cloud_msg.header.stamp = rosNode_->get_clock()->now();
-//     cloud_msg.header.frame_id = tf_frame;
-//     cloud_msg.height = 1;
-//     cloud_msg.width = points.size();
-//     cloud_msg.is_dense = false;
-//     cloud_msg.is_bigendian = false;
-
-//     sensor_msgs::PointCloud2Modifier modifier(cloud_msg);
-//     modifier.setPointCloud2FieldsByString(1, "xyz");
-//     modifier.resize(points.size());
-
-//     sensor_msgs::PointCloud2Iterator<float> iter_x(cloud_msg, "x");
-//     sensor_msgs::PointCloud2Iterator<float> iter_y(cloud_msg, "y");
-//     sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_msg, "z");
-
-//     for (const auto& point : points)
-//     {
-//         *iter_x = point.x();
-//         *iter_y = point.y();
-//         *iter_z = point.z();
-//         ++iter_x;
-//         ++iter_y;
-//         ++iter_z;
-//     }
-
-//     cloud_pub_->publish(cloud_msg);
-// }
-
 void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
 {
     sensor_msgs::msg::PointCloud2 cloud_msg;
     //cloud_msg.header.stamp = rosNode_->get_clock()->now();
-    // cloud_msg.header.frame_id = "map";  // Set a fixed frame for the map
-    //cloud_msg.header.frame_id = tf_frame;  // Set a fixed frame for the map 
     cloud_msg.header.frame_id = "map";  // Set a fixed frame for the map 
     cloud_msg.height = 1;
     cloud_msg.width = points.size();
@@ -247,13 +156,6 @@ void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
 
     for (const auto& point : points)
     {
-        // *iter_x = point.x();
-        // *iter_y = point.y();
-        // *iter_z = point.z();
-        // ++iter_x;
-        // ++iter_y;
-        // ++iter_z;
-
         *iter_x = point.z();  // Z_OCV → X_ROS
         *iter_y = -point.x(); // -X_OCV → Y_ROS
         *iter_z = -point.y(); // -Y_OCV → Z_ROS

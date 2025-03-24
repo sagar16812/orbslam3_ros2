@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     // auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "odom");
 
     // Creating Image subscription
-    std::string imgTopicName = "/myrobot/image_raw" ;
+    std::string imgTopicName = "/camera/rgb/image_color" ;
     // Subscribe to the camera image topic
     auto sub_img0 = node->create_subscription<sensor_msgs::msg::Image>(
         imgTopicName, 5, [igb](const sensor_msgs::msg::Image::SharedPtr msg) { RCLCPP_INFO(rclcpp::get_logger("orbslam3_ros2"), "Received an image!"); igb->grabImage(msg); });
