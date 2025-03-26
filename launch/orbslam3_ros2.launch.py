@@ -37,15 +37,18 @@ def generate_launch_description():
         'visualize', default_value='false', description='Launch RViz2 with saved configuration')
     start_octomap = DeclareLaunchArgument(
         'start_octomap', default_value='false', description='Start Octomap server')
-    
+    camera_type_arg = DeclareLaunchArgument(
+        'camera_type', default_value='mono', description='Camera type: mono, rgbd, stereo')
+
+
     # SLAM Node
     slam_node = Node(
         package='orbslam3_ros2',
-        executable='orb_slam3',
+        executable=LaunchConfiguration('camera_type'),  # Get the executable based on camera type
         output='screen',
         parameters=[
             {"vocab_path": vocab_file},
-            {"config_path": settings_file}
+            {"config_path": settings_file},
         ]
     )
 
@@ -67,6 +70,7 @@ def generate_launch_description():
         record_bag_arg,
         start_octomap,
         visualize_arg,
+        camera_type_arg,
         slam_node,
         bag_record_process,
         OpaqueFunction(function=launch_rviz2),

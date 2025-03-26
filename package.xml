@@ -17,7 +17,7 @@
   <depend>sophus</depend>
   <depend>tf2_ros</depend>
   <depend>geometry_msgs</depend>
-
+  <depend>message_filters</depend>
   <exec_depend>sensor_msgs</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>

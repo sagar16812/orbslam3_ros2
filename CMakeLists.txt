@@ -5,18 +5,19 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+# ROS 2 dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(message_filters REQUIRED)
 
+# ORB-SLAM3 dependencies
 find_package(Sophus REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -42,15 +43,18 @@ include_directories(
   ${ORB_SLAM3_DIR}/include/CameraModels
   ${ORB_SLAM3_DIR}/Thirdparty/Sophus
   )
-  
-add_executable(orb_slam3 src/orb_slam_example.cpp src/image_grabber.cpp)
+
+# Create three executables: mono, rgbd, stereo
+add_executable(mono src/orb_slam_mono.cpp src/image_grabber_mono.cpp)
+add_executable(rgbd src/orb_slam_rgbd.cpp src/image_grabber_rgbd.cpp)
 
 link_directories(
   ${ORB_SLAM3_DIR})
 
 
-# Link the ORB_SLAM3 library and dependencies
-target_link_libraries(orb_slam3
+# Link the ORB_SLAM3 library and dependencies to each executable
+foreach(exec mono rgbd)
+  target_link_libraries(${exec}
   ${OpenCV_LIBS}
   ${cv_bridge_LIBRARIES}
   ${ORB_SLAM3_DIR}/lib/libORB_SLAM3.so
@@ -59,8 +63,8 @@ target_link_libraries(orb_slam3
   ${PANGOLIN_LIB_DIR}
 )
 
-# Specify ROS 2 package dependencies
-ament_target_dependencies(orb_slam3
+  # Specify ROS 2 package dependencies
+  ament_target_dependencies(${exec}
   rclcpp
   sensor_msgs
   cv_bridge
@@ -68,9 +72,11 @@ ament_target_dependencies(orb_slam3
   std_msgs
   tf2_ros
 )
+endforeach()
 
 install(TARGETS
-  orb_slam3
+  mono
+  rgbd
   DESTINATION lib/${PROJECT_NAME}
 )
 

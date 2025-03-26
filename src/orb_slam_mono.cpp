@@ -10,7 +10,7 @@
 
 #include "include/System.h"  // Include the SLAM system header
 
-#include "orbslam3_ros2/image_grabber.hpp" // Change the "orbslam3_ros2" with your package name
+#include "orbslam3_ros2/image_grabber_mono.hpp" // Change the "orbslam3_ros2" with your package name
 
 #include <queue>
 #include <mutex>
@@ -82,10 +82,11 @@ int main(int argc, char *argv[])
     // Publish static transform
     publish_static_transform(node);
     //-----New-----
-    
     // Create SLAM system and ImageGrabber
     auto SLAM = std::make_shared<ORB_SLAM3::System>(vocab_path, config_path, ORB_SLAM3::System::MONOCULAR, showPangolin);
     // auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "oak-d_frame");
+    
+    
     auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "map");
     // auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "odom");
 
