@@ -11,7 +11,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
-
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 std::queue<sensor_msgs::msg::Image::SharedPtr> rgbBuf;
 std::queue<sensor_msgs::msg::Image::SharedPtr> depthBuf;
 std::mutex mBufMutex;
@@ -45,6 +46,19 @@ void sync_callback(std::shared_ptr<ImageGrabber> igb) {
     }
 }
 
+// Function to broadcast static transform
+void publish_static_transform(std::shared_ptr<rclcpp::Node> node)
+{
+    static tf2_ros::StaticTransformBroadcaster static_broadcaster(node);
+    geometry_msgs::msg::TransformStamped static_transform;
+
+    static_transform.header.stamp = node->now();
+    static_transform.header.frame_id = "map";   // The reference frame
+    static_transform.child_frame_id = "odom"; // Your camera frame    
+    static_broadcaster.sendTransform(static_transform);
+    //RCLCPP_INFO(node->get_logger(), "Published static transform: map -> odom");
+}
+
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("orbslam3_rgbd_node");
@@ -64,6 +78,9 @@ int main(int argc, char *argv[]) {
     auto odom_pub = node->create_publisher<nav_msgs::msg::Odometry>("/odometry/slam", 10);
     auto cloud_pub = node->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/pointcloud", 10);
 
+    // Publish static transform
+    publish_static_transform(node);
+    
     // Create SLAM system
     auto SLAM = std::make_shared<ORB_SLAM3::System>(vocab_path, config_path, ORB_SLAM3::System::RGBD, showPangolin);
     auto igb = std::make_shared<ImageGrabber>(SLAM, bEqual, odom_pub, cloud_pub, node, "map");

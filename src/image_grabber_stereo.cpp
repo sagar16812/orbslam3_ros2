@@ -1,4 +1,4 @@
-#include "orbslam3_ros2/image_grabber_rgbd.hpp"
+#include "orbslam3_ros2/image_grabber_stereo.hpp"
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -15,20 +15,46 @@ ImageGrabber::ImageGrabber(std::shared_ptr<ORB_SLAM3::System> pSLAM, bool bClahe
     odom_msg_.child_frame_id = "odom";
 }
 
-void ImageGrabber::grabRGBDImage(const sensor_msgs::msg::Image::SharedPtr msgRGB,
-                                 const sensor_msgs::msg::Image::SharedPtr msgDepth) {
-    std::lock_guard<std::mutex> lock(mBufMutex);
-    rgbBuf.push(msgRGB);
-    depthBuf.push(msgDepth);
-}
+// cv::Mat ImageGrabber::getImageLeft(const sensor_msgs::msg::Image::SharedPtr &msgLeftImg) {
+//     try {
+//         cv::Mat image = cv_bridge::toCvCopy(msgLeftImg, "bgr8")->image;
+//         if (mbClahe) {
+//             cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+//             mClahe->apply(image, image);
+//         }
+//         return image;
+//     } catch (cv_bridge::Exception &e) {
+//         RCLCPP_ERROR(rosNode_->get_logger(), "cv_bridge exception: %s", e.what());
+//         return cv::Mat();
+//     }
+// }
 
-cv::Mat ImageGrabber::getImage(const sensor_msgs::msg::Image::SharedPtr &img_msg) {
+// cv::Mat ImageGrabber::getImageRight(const sensor_msgs::msg::Image::SharedPtr &msgRightImg) {
+//     try {
+//         return cv_bridge::toCvCopy(msgRightImg, sensor_msgs::image_encodings::TYPE_16UC1)->image;
+//     } catch (cv_bridge::Exception &e) {
+//         RCLCPP_ERROR(rosNode_->get_logger(), "cv_bridge exception: %s", e.what());
+//         return cv::Mat();
+//     }
+// }
+cv::Mat ImageGrabber::getImageLeft(const sensor_msgs::msg::Image::SharedPtr &msgLeftImg) {
     try {
-        cv::Mat image = cv_bridge::toCvCopy(img_msg, "bgr8")->image;
-        if (mbClahe) {
+        cv::Mat image;
+        
+        // Check if the input image is already mono8 (grayscale)
+        if (msgLeftImg->encoding == sensor_msgs::image_encodings::MONO8) {
+            image = cv_bridge::toCvCopy(msgLeftImg, sensor_msgs::image_encodings::MONO8)->image;
+        } else {
+            // Convert to grayscale
+            image = cv_bridge::toCvCopy(msgLeftImg, sensor_msgs::image_encodings::BGR8)->image;
             cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+        }
+
+        // Apply CLAHE if enabled
+        if (mbClahe) {
             mClahe->apply(image, image);
         }
+
         return image;
     } catch (cv_bridge::Exception &e) {
         RCLCPP_ERROR(rosNode_->get_logger(), "cv_bridge exception: %s", e.what());
@@ -36,64 +62,43 @@ cv::Mat ImageGrabber::getImage(const sensor_msgs::msg::Image::SharedPtr &img_msg
     }
 }
 
-cv::Mat ImageGrabber::getDepthImage(const sensor_msgs::msg::Image::SharedPtr &depth_msg) {
+cv::Mat ImageGrabber::getImageRight(const sensor_msgs::msg::Image::SharedPtr &msgRightImg) {
     try {
-        return cv_bridge::toCvCopy(depth_msg, sensor_msgs::image_encodings::TYPE_16UC1)->image;
+        cv::Mat image;
+        
+        // Check if the input image is already mono8 (grayscale)
+        if (msgRightImg->encoding == sensor_msgs::image_encodings::MONO8) {
+            image = cv_bridge::toCvCopy(msgRightImg, sensor_msgs::image_encodings::MONO8)->image;
+        } else {
+            // Convert to grayscale
+            image = cv_bridge::toCvCopy(msgRightImg, sensor_msgs::image_encodings::BGR8)->image;
+            cv::cvtColor(image, image, cv::COLOR_BGR2GRAY);
+        }
+
+        // Apply CLAHE if enabled
+        if (mbClahe) {
+            mClahe->apply(image, image);
+        }
+
+        return image;
     } catch (cv_bridge::Exception &e) {
         RCLCPP_ERROR(rosNode_->get_logger(), "cv_bridge exception: %s", e.what());
         return cv::Mat();
     }
 }
 
-// void ImageGrabber::processImages() {
-//     while (rclcpp::ok()) {
-//         sensor_msgs::msg::Image::SharedPtr rgb_msg, depth_msg;
-//         {
-//             std::lock_guard<std::mutex> lock(mBufMutex);
-//             if (rgbBuf.empty() || depthBuf.empty()) continue;
-//             rgb_msg = rgbBuf.front();
-//             depth_msg = depthBuf.front();
-//             rgbBuf.pop();
-//             depthBuf.pop();
-//         }
+void ImageGrabber::processImages(const sensor_msgs::msg::Image::SharedPtr &msgLeftImg,
+    const sensor_msgs::msg::Image::SharedPtr &msgRightImg) {
+    cv::Mat imLeft = getImageLeft(msgLeftImg);
+    cv::Mat imRight = getImageRight(msgRightImg);
 
-//         cv::Mat rgb_image = getImage(rgb_msg);
-//         cv::Mat depth_image = getDepthImage(depth_msg);
-//         if (rgb_image.empty() || depth_image.empty()) continue;
+    if (imLeft.empty() || imRight.empty()) return;
+    // std::cout << "Left image type: " << imLeft.type() << ", Channels: " << imLeft.channels() << std::endl;
+    // std::cout << "Right image type: " << imRight.type() << ", Channels: " << imRight.channels() << std::endl;
 
-//         // Track the RGB-D images and get the camera pose
-//         Sophus::SE3f pose = mpSLAM->TrackRGBD(rgb_image, depth_image,
-//             rgb_msg->header.stamp.sec + 1e-9 * rgb_msg->header.stamp.nanosec);
 
-//         // Get the 3D map points from the SLAM system
-//         std::vector<ORB_SLAM3::MapPoint*> mapPoints = mpSLAM->GetTrackedMapPoints();
-
-//         // Convert ORB-SLAM3 MapPoints to Eigen::Vector3f for ROS2 point cloud
-//         std::vector<Eigen::Vector3f> point_cloud;
-//         for (auto p : mapPoints)
-//         {
-//             if (p && !p->isBad()) // Ensure valid points
-//             {
-//                 Eigen::Vector3f pos = p->GetWorldPos(); // Get 3D position
-//                 point_cloud.emplace_back(pos[0], pos[1], pos[2]);
-//             }
-//         }
-
-//         // Publish pose and point cloud
-//         publishSE3fToOdom(pose);
-//         publishPointCloud(point_cloud);
-//     }
-// }
-
-void ImageGrabber::processImages(const sensor_msgs::msg::Image::SharedPtr &rgb_msg,
-    const sensor_msgs::msg::Image::SharedPtr &depth_msg) {
-    cv::Mat rgb_image = getImage(rgb_msg);
-    cv::Mat depth_image = getDepthImage(depth_msg);
-
-    if (rgb_image.empty() || depth_image.empty()) return;
-
-    Sophus::SE3f pose = mpSLAM->TrackRGBD(rgb_image, depth_image,
-    rgb_msg->header.stamp.sec + 1e-9 * rgb_msg->header.stamp.nanosec);
+    Sophus::SE3f pose = mpSLAM->TrackStereo(imLeft, imRight,
+    msgLeftImg->header.stamp.sec + 1e-9 * msgLeftImg->header.stamp.nanosec);
 
     std::vector<ORB_SLAM3::MapPoint*> mapPoints = mpSLAM->GetTrackedMapPoints();
 

@@ -47,13 +47,14 @@ include_directories(
 # Create three executables: mono, rgbd, stereo
 add_executable(mono src/orb_slam_mono.cpp src/image_grabber_mono.cpp)
 add_executable(rgbd src/orb_slam_rgbd.cpp src/image_grabber_rgbd.cpp)
+add_executable(stereo src/orb_slam_stereo.cpp src/image_grabber_stereo.cpp)
 
 link_directories(
   ${ORB_SLAM3_DIR})
 
 
 # Link the ORB_SLAM3 library and dependencies to each executable
-foreach(exec mono rgbd)
+foreach(exec mono rgbd stereo)
   target_link_libraries(${exec}
   ${OpenCV_LIBS}
   ${cv_bridge_LIBRARIES}
@@ -77,6 +78,7 @@ endforeach()
 install(TARGETS
   mono
   rgbd
+  stereo
   DESTINATION lib/${PROJECT_NAME}
 )
 

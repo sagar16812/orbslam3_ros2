@@ -5,17 +5,17 @@
 
 Camera.type: "PinHole"
 
-Camera.fx: 525.0  # Focal length in x
-Camera.fy: 525.0  # Focal length in y
-Camera.cx: 319.5  # Optical center x
-Camera.cy: 239.5  # Optical center y
+Camera.fx: 517.3  # Focal length in x
+Camera.fy: 516.5  # Focal length in y
+Camera.cx: 318.6  # Optical center x
+Camera.cy: 255.3  # Optical center y
 
 # Distortion parameters (Kinect has minimal distortion)
-Camera.k1: 0.0
-Camera.k2: 0.0
-Camera.p1: 0.0
-Camera.p2: 0.0
-Camera.k3: 0.0
+Camera.k1: 0.2624
+Camera.k2: -0.9531
+Camera.p1: -0.0054
+Camera.p2: 0.0026
+Camera.k3: 1.1633
 
 # Camera resolution
 Camera.width: 640
@@ -26,7 +26,8 @@ Camera.fps: 30.0
 
 # Depth processing parameters
 ThDepth: 40.0  # Depth threshold for tracking
-DepthMapFactor: 1.0  # Conversion factor for depth values (16-bit PNG format)
+# DepthMapFactor: 5000.0  # Conversion factor for depth values (16-bit PNG format)
+DepthMapFactor: 1.0  # Conversion factor for the 32-bit float images in the ROS bag files
 
 # Stereo baseline times focal length (used in depth-based tracking)
 Camera.bf: 40.0
@@ -35,14 +36,14 @@ Camera.bf: 40.0
 Camera.RGB: true
 
 # ORB Feature Extraction Parameters (Optimized for Kinect tracking)
-ORBextractor.nFeatures: 2000
+ORBextractor.nFeatures: 1500
 ORBextractor.scaleFactor: 1.2
 ORBextractor.nLevels: 8
 ORBextractor.iniThFAST: 25
 ORBextractor.minThFAST: 10
 
 # Initialization settings (for monocular mode)
-InitMinFeatures: 100
+# InitMinFeatures: 100
 
 # Viewer settings for visualization
 Viewer.KeyFrameSize: 0.05
