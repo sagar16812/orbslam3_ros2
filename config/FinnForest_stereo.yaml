@@ -1,0 +1,97 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# System config
+#--------------------------------------------------------------------------------------------
+
+# When the variables are commented, the system doesn't load a previous session or not store the current one
+
+# If the LoadFile doesn't exist, the system give a message and create a new Atlas from scratch
+#System.LoadAtlasFromFile: "Session_MH01_MH02_MH03_Stereo60_Pseudo"
+
+# The store file is created from the current session, if a file with the same name exists it is deleted
+#System.SaveAtlasToFile: "Session_MH01_MH02_MH03_Stereo60_Pseudo"
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+Camera.type: "Stereo"
+
+# Camera Parameters
+Camera.model: "Pinhole"
+Camera.width: 2013
+Camera.height: 1195
+
+# Frame Rate Mentioned
+Camera.fps: 8.0
+# Left Camera Intrinsics
+Camera1.fx: 1056.6287421208997
+Camera1.fy: 1056.9497022783046
+Camera1.cx: 952.1135175072209
+Camera1.cy: 592.824593628865
+
+# Right Camera Intrinsics
+Camera2.fx: 1056.6232121991136
+Camera2.fy: 1056.9706073901264
+Camera2.cx: 955.8007178590618
+Camera2.cy: 597.6970939756399
+
+# Distortion Coefficients (Plumb Bob Model)
+Camera1.k1: -0.12427059109969174
+Camera1.k2: 0.08183525905697533
+Camera1.p1: 0.0
+Camera1.p2: 0.0
+Camera1.k3: -0.020818847104251116
+
+Camera2.k1: -0.12427059109969174
+Camera2.k2: 0.08183525905697533
+Camera2.p1: 0.0
+Camera2.p2: 0.0
+Camera2.k3: -0.020818847104251116
+
+# Stereo Baseline (from Projection Matrix P[0,3] / -fx)
+Camera.baseline: 211.764620359722 / 1056.6232121991136
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+# Camera Extrinsics (Left to Right Camera Transformation)
+T_lr:
+  - [0.9998147898842213, -0.012371901235623347, 0.014741844816248635, -200.41535112385927]
+  - [0.012113405538369036, 0.9997735353092285, 0.017496956922557233, -0.39839592244072314]
+  - [-0.014954976931890789, -0.017315142364496883, 0.9997382329939491, -4.111728043508758]
+  - [0.0, 0.0, 0.0, 1.0]
+
+# Rectification Rotation Matrices (Identity for Rectified Stereo Pair)
+R1:
+  - [1.0, 0.0, 0.0]
+  - [0.0, 1.0, 0.0]
+  - [0.0, 0.0, 1.0]
+
+R2:
+  - [1.0, 0.0, 0.0]
+  - [0.0, 1.0, 0.0]
+  - [0.0, 0.0, 1.0]
+
+# Other ORB-SLAM3 Parameters (Modify as needed)
+ORBextractor.nFeatures: 1000
+ORBextractor.scaleFactor: 1.2
+ORBextractor.nLevels: 8
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
+Viewer.imageViewScale: 2
+

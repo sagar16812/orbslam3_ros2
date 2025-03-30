@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
     // RGB subscription
     auto LeftImg = node->create_subscription<sensor_msgs::msg::Image>(
-        "/sensor/camera/vi_sensor/left/image_raw", rclcpp::SensorDataQoS(),
+        "/stereo/left/image_rect", rclcpp::SensorDataQoS(),
         [](const sensor_msgs::msg::Image::SharedPtr msg) {
             std::lock_guard<std::mutex> lock(mBufMutex);
             LeftImgBuf.push(msg);
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
     // Depth subscription
     auto RightImg = node->create_subscription<sensor_msgs::msg::Image>(
-        "/sensor/camera/vi_sensor/right/image_raw", rclcpp::SensorDataQoS(),
+        "/stereo/right/image_rect", rclcpp::SensorDataQoS(),
         [](const sensor_msgs::msg::Image::SharedPtr msg) {
             std::lock_guard<std::mutex> lock(mBufMutex);
             RightImgBuf.push(msg);
