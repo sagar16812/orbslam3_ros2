@@ -29,6 +29,7 @@ public:
     void grabRGBDImage(const sensor_msgs::msg::Image::SharedPtr rgb_msg, const sensor_msgs::msg::Image::SharedPtr depth_msg);
     cv::Mat getImage(const sensor_msgs::msg::Image::SharedPtr &img_msg);
     cv::Mat getDepthImage(const sensor_msgs::msg::Image::SharedPtr &depth_msg);
+    void savePoseToFile(const Sophus::SE3f &pose, double sec, double nanosec);
     // void virtual processImages();
     void processImages(const sensor_msgs::msg::Image::SharedPtr &rgb_msg,
         const sensor_msgs::msg::Image::SharedPtr &depth_msg);

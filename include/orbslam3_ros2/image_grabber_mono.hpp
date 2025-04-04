@@ -8,7 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-
+// #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "include/System.h"  // Include the SLAM system header
 
 #include <queue>
@@ -29,6 +29,8 @@ public:
 
     void grabImage(const sensor_msgs::msg::Image::SharedPtr msg);
     cv::Mat getImage(const sensor_msgs::msg::Image::SharedPtr &img_msg);
+
+    void savePoseToFile(const Sophus::SE3f &pose, double sec, double nanosec);
     void virtual processImages();
     void publishSE3fToOdom(const Sophus::SE3f& se3);
     void publishPointCloud(const std::vector<Eigen::Vector3f>& points);

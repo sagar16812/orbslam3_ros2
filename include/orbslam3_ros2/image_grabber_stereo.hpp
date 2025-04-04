@@ -28,6 +28,7 @@ public:
 
     cv::Mat getImageLeft(const sensor_msgs::msg::Image::SharedPtr &msgLeftImg);
     cv::Mat getImageRight(const sensor_msgs::msg::Image::SharedPtr &msgRightImg);
+    void savePoseToFile(const Sophus::SE3f &pose, double sec, double nanosec);
     // void virtual processImages();
     void processImages(const sensor_msgs::msg::Image::SharedPtr &msgLeftImg,
         const sensor_msgs::msg::Image::SharedPtr &msgRightImg);

@@ -4,6 +4,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <Eigen/Core>
+#include <fstream>  // For file handling
 
 ImageGrabber::ImageGrabber(std::shared_ptr<ORB_SLAM3::System> pSLAM, bool bClahe,
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr rospub,
@@ -45,45 +46,30 @@ cv::Mat ImageGrabber::getDepthImage(const sensor_msgs::msg::Image::SharedPtr &de
     }
 }
 
-// void ImageGrabber::processImages() {
-//     while (rclcpp::ok()) {
-//         sensor_msgs::msg::Image::SharedPtr rgb_msg, depth_msg;
-//         {
-//             std::lock_guard<std::mutex> lock(mBufMutex);
-//             if (rgbBuf.empty() || depthBuf.empty()) continue;
-//             rgb_msg = rgbBuf.front();
-//             depth_msg = depthBuf.front();
-//             rgbBuf.pop();
-//             depthBuf.pop();
-//         }
+// Function to save pose to a file
+void ImageGrabber::savePoseToFile(const Sophus::SE3f &pose, double sec, double nanosec)
+{
+    std::ofstream pose_file("pose.txt", std::ios::app); // Open file in append mode
+    if (!pose_file.is_open())
+    {
+        RCLCPP_ERROR(rosNode_->get_logger(), "Failed to open pose.txt for writing.");
+        return;
+    }
 
-//         cv::Mat rgb_image = getImage(rgb_msg);
-//         cv::Mat depth_image = getDepthImage(depth_msg);
-//         if (rgb_image.empty() || depth_image.empty()) continue;
+    // Get transformation matrix (4x4)
+    Eigen::Matrix4f T = pose.matrix();
 
-//         // Track the RGB-D images and get the camera pose
-//         Sophus::SE3f pose = mpSLAM->TrackRGBD(rgb_image, depth_image,
-//             rgb_msg->header.stamp.sec + 1e-9 * rgb_msg->header.stamp.nanosec);
+    // Write timestamp
+    pose_file << sec << "." << nanosec << " ";
 
-//         // Get the 3D map points from the SLAM system
-//         std::vector<ORB_SLAM3::MapPoint*> mapPoints = mpSLAM->GetTrackedMapPoints();
+    // Write pose matrix (row-wise)
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            pose_file << T(i, j) << " ";
 
-//         // Convert ORB-SLAM3 MapPoints to Eigen::Vector3f for ROS2 point cloud
-//         std::vector<Eigen::Vector3f> point_cloud;
-//         for (auto p : mapPoints)
-//         {
-//             if (p && !p->isBad()) // Ensure valid points
-//             {
-//                 Eigen::Vector3f pos = p->GetWorldPos(); // Get 3D position
-//                 point_cloud.emplace_back(pos[0], pos[1], pos[2]);
-//             }
-//         }
-
-//         // Publish pose and point cloud
-//         publishSE3fToOdom(pose);
-//         publishPointCloud(point_cloud);
-//     }
-// }
+    pose_file << std::endl;
+    pose_file.close();
+}
 
 void ImageGrabber::processImages(const sensor_msgs::msg::Image::SharedPtr &rgb_msg,
     const sensor_msgs::msg::Image::SharedPtr &depth_msg) {
@@ -94,6 +80,9 @@ void ImageGrabber::processImages(const sensor_msgs::msg::Image::SharedPtr &rgb_m
 
     Sophus::SE3f pose = mpSLAM->TrackRGBD(rgb_image, depth_image,
     rgb_msg->header.stamp.sec + 1e-9 * rgb_msg->header.stamp.nanosec);
+
+    // Save pose to file
+    //savePoseToFile(pose, rgb_msg->header.stamp.sec, rgb_msg->header.stamp.nanosec);
 
     std::vector<ORB_SLAM3::MapPoint*> mapPoints = mpSLAM->GetTrackedMapPoints();
 
@@ -108,26 +97,21 @@ void ImageGrabber::processImages(const sensor_msgs::msg::Image::SharedPtr &rgb_m
     publishPointCloud(point_cloud);
 }
 
-void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& se3)
-{
-    odom_msg_.header.stamp = rosNode_->get_clock()->now();
+void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& Tcw)
+{    
+    // Obtain the position and the orientation
+    Sophus::SE3f Twc = Tcw.inverse();
+    Eigen::Vector3f twc = Twc.translation();
+    Eigen::Quaternionf q = Twc.unit_quaternion();
 
-    odom_msg_.pose.pose.position.x = -se3.translation().z();   // Z_OCV → X_ROS
-    odom_msg_.pose.pose.position.y = se3.translation().x();  // -X_OCV → Y_ROS
-    odom_msg_.pose.pose.position.z = se3.translation().y();  // -Y_OCV → Z_ROS
+    odom_msg_.pose.pose.position.x = twc.z();   // Z_OCV → X_ROS
+    odom_msg_.pose.pose.position.y = -twc.x();  // -X_OCV → Y_ROS
+    odom_msg_.pose.pose.position.z = -twc.y();  // -Y_OCV → Z_ROS  
 
-    // Convert ORB-SLAM3 quaternion to ROS2 (handle different coordinate frames)
-    Eigen::Quaternionf q_ocv(se3.unit_quaternion());
-    
-    Eigen::Quaternionf q_conversion(Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitY()) *
-                               Eigen::AngleAxisf(M_PI / 2, Eigen::Vector3f::UnitZ()));
-
-    Eigen::Quaternionf q_ros = q_conversion * q_ocv;
-
-    odom_msg_.pose.pose.orientation.x = q_ros.x();
-    odom_msg_.pose.pose.orientation.y = q_ros.y();
-    odom_msg_.pose.pose.orientation.z = q_ros.z();
-    odom_msg_.pose.pose.orientation.w = q_ros.w();
+    odom_msg_.pose.pose.orientation.x = q.z();
+    odom_msg_.pose.pose.orientation.y = -q.x();
+    odom_msg_.pose.pose.orientation.z = -q.y();
+    odom_msg_.pose.pose.orientation.w = q.w();
 
     // --- Set Covariance Values ---
     double position_variance = 0.01;  // Adjust based on your SLAM system's accuracy
@@ -143,7 +127,7 @@ void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& se3)
     odom_msg_.pose.covariance[28] = orientation_variance; // pitch
     odom_msg_.pose.covariance[35] = orientation_variance; // yaw
     // --------------------------------
-    
+    odom_msg_.header.stamp = rosNode_->get_clock()->now();
     odom_pub_->publish(odom_msg_);
 }
 

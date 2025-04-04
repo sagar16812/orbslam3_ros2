@@ -16,6 +16,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(message_filters REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 # ORB-SLAM3 dependencies
 find_package(Sophus REQUIRED)
@@ -33,6 +34,7 @@ set(PANGOLIN_LIB_DIR "/home/sagar/Developer/ComputerVision/SLAM/Pangolin/build/s
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 #include_directories(include/orbslam3_ros2)
+include_directories(/opt/ros/humble/include/tf2_geometry_msgs)
 
 include_directories(
   ${OpenCV_INCLUDE_DIRS}

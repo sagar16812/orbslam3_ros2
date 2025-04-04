@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     bool bEqual = false;
 
     // Publishers
-    auto odom_pub = node->create_publisher<nav_msgs::msg::Odometry>("/odometry/slam", 10);
+    auto odom_pub = node->create_publisher<nav_msgs::msg::Odometry>("/slam/odometry", 10);
     auto cloud_pub = node->create_publisher<sensor_msgs::msg::PointCloud2>("/slam/pointcloud", 10);
 
     // Publish static transform
