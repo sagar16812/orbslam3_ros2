@@ -5,7 +5,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <Eigen/Core>
-#include <fstream>  // For file handling
+#include <fstream>
 #include <sophus/se3.hpp>
 
 ImageGrabber::ImageGrabber(std::shared_ptr<ORB_SLAM3::System> pSLAM, bool bClahe,
@@ -148,7 +148,6 @@ void ImageGrabber::publishSE3fToOdom(const Sophus::SE3f& Tcw)
 void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
 {
     sensor_msgs::msg::PointCloud2 cloud_msg;
-    //cloud_msg.header.stamp = rosNode_->get_clock()->now();
     cloud_msg.header.frame_id = "map";  // Set a fixed frame for the map 
     cloud_msg.height = 1;
     cloud_msg.width = points.size();
@@ -172,6 +171,6 @@ void ImageGrabber::publishPointCloud(const std::vector<Eigen::Vector3f>& points)
         ++iter_y;
         ++iter_z;
     }
-
+    cloud_msg.header.stamp = rosNode_->get_clock()->now();
     cloud_pub_->publish(cloud_msg);
 }

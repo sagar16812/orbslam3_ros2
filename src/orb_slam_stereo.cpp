@@ -55,8 +55,7 @@ int main(int argc, char *argv[]) {
     node->declare_parameter("vocab_path", "");
 
     std::string config_path = node->get_parameter("config_path").as_string();
-    // std::string vocab_path = node->get_parameter("vocab_path").as_string();
-    std::string vocab_path = "/home/sagar/Developer/ComputerVision/SLAM/ORB_SLAM3/Vocabulary/ORBvoc.txt";
+    std::string vocab_path = node->get_parameter("vocab_path").as_string();
 
     bool showPangolin = true; // Show Pangolin window
     bool bEqual = false;

@@ -24,9 +24,7 @@ def generate_launch_description():
     slam_pkg_path = get_package_share_directory("orbslam3_ros2")
 
     vocab_file = os.path.join(slam_pkg_path, "config", "ORBvoc.txt")
-    # settings_file = os.path.join(slam_pkg_path, "config", "camera_and_slam_settings.yaml")
-    # settings_file = os.path.join(slam_pkg_path, "config", "TUM_RGB-D_Dataset.yaml")
-    settings_file = os.path.join(slam_pkg_path, "config", "camera_and_slam_settings.yaml")
+    settings_file = os.path.join(slam_pkg_path, "config", "TUM_RGB-D_Dataset.yaml")
 
     print(f"Path of vocab file: {vocab_file}")
     print(f"Path of settings file: {settings_file}")

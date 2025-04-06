@@ -18,19 +18,6 @@ std::queue<sensor_msgs::msg::Image::SharedPtr> depthBuf;
 std::mutex mBufMutex;
 std::condition_variable data_cond;
 
-// void sync_callback(std::shared_ptr<ImageGrabber> igb) {
-//     while (rclcpp::ok()) {
-//         std::unique_lock<std::mutex> lock(mBufMutex);
-//         data_cond.wait(lock, [] { return !rgbBuf.empty() && !depthBuf.empty(); });
-//         auto rgb_msg = rgbBuf.front();
-//         auto depth_msg = depthBuf.front();
-//         rgbBuf.pop();
-//         depthBuf.pop();
-//         lock.unlock();
-//         igb->grabRGBDImage(rgb_msg, depth_msg);
-//     }
-// }
-
 void sync_callback(std::shared_ptr<ImageGrabber> igb) {
     while (rclcpp::ok()) {
         std::unique_lock<std::mutex> lock(mBufMutex);
@@ -68,8 +55,7 @@ int main(int argc, char *argv[]) {
     node->declare_parameter("vocab_path", "");
 
     std::string config_path = node->get_parameter("config_path").as_string();
-    // std::string vocab_path = node->get_parameter("vocab_path").as_string();
-    std::string vocab_path = "/home/sagar/Developer/ComputerVision/SLAM/ORB_SLAM3/Vocabulary/ORBvoc.txt";
+    std::string vocab_path = node->get_parameter("vocab_path").as_string();
 
     bool showPangolin = true; // Show Pangolin window
     bool bEqual = false;
