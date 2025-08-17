@@ -118,14 +118,23 @@ This package supports running ORB-SLAM3 with **monocular**, **stereo**, and **RG
 
 ### Prerequisites
 Before running, make sure you:
-- Copy the `<ORB_SLAM3_ROOT_DIR>/ORB_SLAM3/Vocabulary/ORBvoc.txt` to the `config/` directory (`~/colcon_ws/src/orbslam3_ros2/config`).
-- Configure the camera parameters YAML config files under the `config/` directory based on your `camera type` and calibration result.
-- Source the workspace:
+1. Copy the `<ORB_SLAM3_ROOT_DIR>/ORB_SLAM3/Vocabulary/ORBvoc.txt` to the `config/` directory (`~/colcon_ws/src/orbslam3_ros2/config`).
+2. Configure the camera parameters YAML config files under the `config/` directory based on your `camera type` and calibration result. If the camera has not yet been calibrated, please consult the **[camera calibration guide](https://github.com/sagar16812/Getting-Started-with-ROS2-A-Tutorial-Series/tree/main/raspi_headless_camera_calibration_guide)** for assistance.
+3. Source the workspace:
     ```bash
     cd ~/colcon_ws
     source install/setup.bash
     ```
-- Start the image publishing node (you can use the `v4lcamera` package)
+4. Start the image publishing node:
+    - Either you can use the `v4lcamera` package:
+    ```bash
+        ros2 run v4l2_camera v4l2_camera_node --ros-args --remap /image:=/my_camera/image -p image_size:="[320, 240]"
+    ```
+    - Or, you can use the `image_tools`:
+    ```bash
+    ros2 run image_tools cam2image --ros-args --remap /image:=/my_camera/image -p width:=320 -p height:=240
+    ```
+    *(**NOTE:** Change the `Image size` i.e. `width` and `height`  as per your calibration settings.)*
 
 ### Launch using the launch file with relevant `camera_type`
 1. Monocular executable: `mono`
@@ -144,7 +153,7 @@ Before running, make sure you:
 > Make sure the **Image publishing node** is publishing images on the expected topics as configured in the nodes of respective executable.
 
 ## Options
-This package has options to visualize or use octomap_server or save rosbag. We can use all the options at the same time.
+This package has options to visualize or use octomap_server or save rosbag. **We can use all the options at the same time.**
 - **RViz2 Visualization**: Load the `orbslam3_ros2` with pre-configured `config/orbslam3_ros2.rviz` file:
     ```bash
     ros2 launch orbslam3_ros2 orbslam3_ros2.launch.py camera_type:=mono visualize:=true
@@ -157,6 +166,10 @@ This package has options to visualize or use octomap_server or save rosbag. We c
     ```bash
     ros2 launch orbslam3_ros2 orbslam3_ros2.launch.py camera_type:=mono record_bag:=true
     ```
+- **RViz2 + octomap_server + Record a rosbag**:
+    ```bash
+    ros2 launch orbslam3_ros2 orbslam3_ros2.launch.py camera_type:=mono visualize:=true start_octomap:=true record_bag:=true
+    ```
 
 ## Project Structure
 
@@ -165,23 +178,23 @@ orbslam3_ros2/
 ├── CMakeLists.txt                     # CMake build configuration
 ├── package.xml                        # ROS 2 package metadata
 ├── README.md                          # Project documentation
-
+|
 ├── config/                            # Configuration files
 │   ├── ORBvoc.txt                     # ORB-SLAM3 vocabulary file
 │   ├── orbslam3_ros2.rviz             # RViz2 configuration file
-│   ├── camera_and_slam_settings.yaml  # Default
+│   ├── camera_and_slam_settings.yaml  # Default (Monocular Camera)
 │   ├── stereo_camera_config.yaml      
 │   ├── TUM_RGB-D_Dataset.yaml         
 │   └── FinnForest_stereo.yaml         
-
+|
 ├── launch/                            # ROS 2 launch files
 │   └── orbslam3_ros2.launch.py        # Unified launch file for mono, stereo, rgbd
-
+|
 ├── include/orbslam3_ros2/             # C++ headers
 │   ├── image_grabber_mono.hpp         # Monocular input handler
 │   ├── image_grabber_stereo.hpp       # Stereo input handler
 │   └── image_grabber_rgbd.hpp         # RGB-D input handler
-
+|
 ├── src/                               # C++ source files
 │   ├── orb_slam_mono.cpp              # Mono SLAM integration
 │   ├── orb_slam_stereo.cpp            # Stereo SLAM integration
@@ -204,6 +217,12 @@ orbslam3_ros2/
 3. https://github.com/zang09/ORB-SLAM3-STEREO-FIXED
 4. My Article Series: [Getting Started with ROS2](https://medium.com/@sagarcadet/list/getting-started-with-ros2-adb24ab6d8dd)
 5. Github: [Getting-Started-with-ROS2-A-Tutorial-Series](https://github.com/sagar16812/Getting-Started-with-ROS2-A-Tutorial-Series)
+
+---
+
+## Planned Enhancements
+- ORB-SLAM3 supports IMU data. Add support for passing IMU data as well.
+- Implement additional post-processing filters (e.g., voxel grid, statistical outlier removal) on the acquired point cloud, since ORB-SLAM3 only performs outlier rejection at the feature/landmark level and does not explicitly denoise dense point clouds.
 ---
 
 ## License
